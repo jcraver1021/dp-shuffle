@@ -7,7 +7,7 @@ class Client:
 	"""A client, which contains longitudinal binary data and will report at certain time periods a randomized response based on that data
 	
 	To use:
-	>>> client = Client(binaryArray)
+	>>> client = longitudinal.Client(binaryArray)
 	>>> for t in range(d):
 	>>> 	client.update(t, eps)
 	"""
@@ -43,7 +43,7 @@ class Client:
 			d: The length of dx
 			k: The number of nonzero elements in dx
 		Output:
-			None
+			k: Number of times the client's value changes
 		Side Effects:
 			i* (here ic) = the change to report in this epoch (sampled at random from 0 up to k)
 			h* (here hc) = the row of the implicit summary binary tree on which to report in this epoch (sampled at random from 0 up to log2(d) + 1)
@@ -54,6 +54,7 @@ class Client:
 		self.__hc = np.random.choice(tree_depth_list(d))	# Choose a level of the tree to report
 		self.__i = 0										# Counters (changes seen)
 		self.__c = 0										# Value of change seen
+		self.k = k											# Number of times this client changes its value
 	
 	def update(self, t, eps):
 		"""Report on the update for time t (depending on which level of tree we are on, expect an update every d / 2^h* times)
@@ -84,10 +85,43 @@ class Client:
 			return (self.__hc, t, u)
 	
 class Server:
+	"""A client, which contains longitudinal binary data and will report at certain time periods a randomized response based on that data
 	
-	def __init__(self, clients, d):
-		self.clients = clients
-		self.t = 0
+	To use:
+	>>> server = longitudinal.Server(binaryArray)
+	>>> for t in range(d):
+	>>> 	... gather reports ...
+	>>> 	server.collect(t, reports)
+	>>> server.aggregate(eps)
+	"""
+	
+	def __init__(self, d):
 		self.d = d
+		self.T = {}
 	
+	def collect(self, t, reports):
+		# Each report is (h, t, u), where h is the level, t is the time, and u is the value
+		if reports:
+			for report in reports:
+				if report:
+					key = (report[0] + 1, int((report[1] + 1) / (2 ** report[0])))
+					if key not in self.T:
+						self.T[key] = 0
+					self.T[key] += report[2]
 	
+	def aggregate(self, k, eps):
+		f = []
+		a = np.log2(self.d) * (np.exp(eps / 2) + 1) / (np.exp(eps / 2) - 1)
+		for t in range(self.d):
+			C = set([(1, i + 1) for i in range(t + 1)])
+			for h in tree_depth_list(self.d):
+				for i in range(self.d):
+					if i % 2 == 0:
+						key1 = (h + 1, i + 1)
+						key2 = (h + 1, i + 2)
+						if key1 in C and key2 in C:
+							C.remove(key1)
+							C.remove(key2)
+							C.add(((h + 2), int((i + 2) / 2)))
+			f.append(a * k * np.sum([self.T[c] for c in C if c in self.T]))
+		return f
