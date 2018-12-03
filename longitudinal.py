@@ -12,7 +12,7 @@ class Client:
 	>>> 	client.update(t, eps)
 	"""
 	
-	def __init(self, x):
+	def __init__(self, x):
 		"""Initialize the client (simply calls self.reset())
 		Input:
 			x (array): The longitudinal secret bits (x[t] = value of x at time t)
@@ -74,7 +74,7 @@ class Client:
 			self.__i += 1
 		
 		# Report if we reach a tree-level-based milestone
-		if (2 ** self.__hc) % (t + 1):
+		if (t + 1) % (2 ** self.__hc) == 0:
 			u = np.random.choice([-1, 1]) 
 			if self.__c != 0:
 				# randomized response
@@ -84,4 +84,10 @@ class Client:
 			return (self.__hc, t, u)
 	
 class Server:
-	pass
+	
+	def __init__(self, clients, d):
+		self.clients = clients
+		self.t = 0
+		self.d = d
+	
+	
