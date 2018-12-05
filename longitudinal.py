@@ -1,7 +1,57 @@
 import numpy as np
 
 def tree_depth_list(d):
+	"""Return a list of numbers from 0 to log2(d)
+	Input:
+		Number of elements
+	Output:
+		List of tree rows
+	"""
 	return np.arange(np.log2(d) + 1, dtype=int)
+
+def generate_dx(d, k):
+	"""Generate a differential vector of length d with k changes
+	Input:
+		d: Length of array
+		k: Number of changes
+	Output:
+		dx: vector with k changes, alternating -1 and 1 (with random start point)
+	"""
+	# There are k changes allowed, so start there
+	dx = np.concatenate((np.ones(k, dtype=int), np.zeros(d - k, dtype=int)))
+	
+	# Randomize the location of these changes
+	np.random.shuffle(dx)
+	
+	# Decide whether we start from 0 or 1 (-1, 1 from derivative's perspective)
+	c = np.random.choice([-1, 1])
+	
+	# Every other 1 becomes a -1
+	for i in range(len(dx)):
+		if dx[i] != 0:
+			dx[i] = c
+			c *= -1
+	
+	# Return result
+	return dx
+
+def compute_x(dx):
+	"""Compute x based on dx
+	Input:
+		dx: differential vector
+	Output:
+		x: true values at time t - 1
+	"""
+	# Find the first nonzero element of dx and report the opposite (since x is a binary array)
+	x = -dx[[np.nonzero(dx)[0][0]]]
+	
+	# Compute the marginal sums for each element
+	for i in range(len(dx)):
+		x.append(x[i] + dx[i])
+	
+	# Return the result
+	return x
+	
 
 class Client:
 	"""A client, which contains longitudinal binary data and will report at certain time periods a randomized response based on that data
@@ -12,30 +62,28 @@ class Client:
 	>>> 	client.update(t, eps)
 	"""
 	
-	def __init__(self, x):
+	def __init__(self, dx):
 		"""Initialize the client (simply calls self.reset())
 		Input:
-			x (array): The longitudinal secret bits (x[t] = value of x at time t)
+			dx (array): The longitudinal secret bits as a discrete differential (where x[t] = value of x at time t, dx[t] = x[t] - x[t-1])
 		Output:
 			None
 		Side Effects:
 			See "reset"
 		"""
-		self.reset(x)
+		self.reset(dx)
 	
-	def reset(self, x):
+	def reset(self, dx):
 		"""Reset the client to have the given bits and call self.setup(d, k) is called, where d is the length of dx and k is the number of nonzero entries of dx
 		Input:
-			x (array): The longitudinal secret bits (x[t] = value of x at time t)
+			dx (array): The longitudinal secret bits as a discrete differential
 		Output:
 			None
 		Side Effects:
-			dx = the discrete derivative of the elements of x (i.e. elements are \in {-1, 0, 1})
 			See "setup"
 		"""
-		self.__x = x
-		self.__dx = np.ediff1d(self.__x)
-		self.__setup(len(self.__dx), int(np.linalg.norm(self.__dx, 1)))
+		self.dx = dx
+		self.__setup(len(self.dx), int(np.linalg.norm(self.dx, 1)))
 	
 	def __setup(self, d, k):
 		"""Setup the client's counters after reset
@@ -69,9 +117,9 @@ class Client:
 			c = 0 (if we report the change), meaning that the client will ONLY report the i*th change
 		"""
 		# Increment the counter if we see a change, store in c if it is the i*th change
-		if self.__dx[t] != 0:
+		if self.dx[t] != 0:
 			if self.__i == self.__ic:
-				self.__c = self.__dx[t]
+				self.__c = self.dx[t]
 			self.__i += 1
 		
 		# Report if we reach a tree-level-based milestone
@@ -96,10 +144,27 @@ class Server:
 	"""
 	
 	def __init__(self, d):
+		"""Initialize the server
+		Input:
+			d: Size of time horizon
+		Output:
+			None
+		Side Effects:
+			T = map of (level, time) to observed sum
+		"""
 		self.d = d
 		self.T = {}
 	
 	def collect(self, t, reports):
+		"""Collect all reports for time period t
+		Input:
+			t: time period of reports
+			reports: array of reports (h, t, u) from each reporting client
+		Output:
+			None
+		Side Effects:
+			T[(h, t)] is updated with the sum of all u entries for each h and t in the reports
+		"""
 		# Each report is (h, t, u), where h is the level, t is the time, and u is the value
 		if reports:
 			for report in reports:
@@ -110,12 +175,24 @@ class Server:
 					self.T[key] += report[2]
 	
 	def aggregate(self, k, eps):
+		"""Aggregate all seen reports into the marginal estimates
+		Input:
+			k: Number of in-epoch changes per client
+			eps: Noise estimate (privacy budget)
+		Output:
+			Array of marginal estimates (f[t] = marginal estimate at time t)
+		"""
+		# f is the estimate, a is the scaling factor
 		f = []
 		a = np.log2(self.d) * (np.exp(eps / 2) + 1) / (np.exp(eps / 2) - 1)
+		
+		# Go by time period
 		for t in range(self.d):
+			# Initialize the tree from the leaves
 			C = set([(1, i + 1) for i in range(t + 1)])
 			for h in tree_depth_list(self.d):
 				for i in range(self.d):
+					# Fold nodes up to their parents (if present before time t)
 					if i % 2 == 0:
 						key1 = (h + 1, i + 1)
 						key2 = (h + 1, i + 2)
@@ -123,5 +200,8 @@ class Server:
 							C.remove(key1)
 							C.remove(key2)
 							C.add(((h + 2), int((i + 2) / 2)))
+			# Sum up all the remaining nodes into this time period's estimate
 			f.append(a * k * np.sum([self.T[c] for c in C if c in self.T]))
+		
+		# Return all estimates
 		return f
