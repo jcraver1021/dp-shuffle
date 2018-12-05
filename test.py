@@ -4,48 +4,34 @@
 import longitudinal
 import numpy as np
 
+def run_test(n, d, k, eps, collect=None, shuffle=False):
+	clients = []
+	server = longitudinal.Server(d)
+	for i in range(n):
+		print("Client %d" % i)
+		dx = longitudinal.generate_dx(d, k)
+		#print(dx)
+		clients.append(longitudinal.Client(dx))
+	for t in range(d):
+		print("t = %d" % t)
+		reports = []
+		for i in range(n):
+			rep = clients[i].update(t, eps)
+			if rep:
+				#print(rep)
+				reports.append(rep)
+		if collect:
+			server.collect(t, reports)
+	if collect:
+		f = server.aggregate(k, collect)
+		print(f)
+		f_true = np.sum(np.array([clients[i].dx for i in range(n)]), axis=0)
+		print(f_true)
+
 # Test 1: Single-client output
 print("Single-client output")
-d = 16
-x = np.random.randint(2, size=d + 1)
-c = longitudinal.Client(x)
-eps = 0.1
-print(x)
-for i in range(d):
-	print(i, c.update(i, eps))
+run_test(1, 16, 8, 0.25)
 
-# Test 2: Multi-client output
-print("Multi-client output")
-d = 16
-n = 8
-c = []
-eps = 0.1
-for i in range(n):
-	x = np.random.randint(2, size=d + 1)
-	print(x)
-	c.append(longitudinal.Client(x))
-print(x)
-for i in range(d):
-	for j in range(n):
-		print(i, c[j].update(i, eps))
-
-# Test 3: Multi-client server
-print("Single-client server")
-d = 16
-n = 1024
-x = np.random.randint(2, size=d + 1)
-c = []
-s = longitudinal.Server(d)
-eps = 0.1
-for i in range(n):
-	x = np.random.randint(2, size=d + 1)
-	print(x)
-	c.append(longitudinal.Client(x))
-print(x)
-for i in range(d):
-	reports = []
-	for j in range(n):
-		reports.append(c[j].update(i, eps))
-	s.collect(i, reports)
-print(s.T)
-print(s.aggregate(np.max([c[i].k for i in range(n)]), eps))
+# Test 1: Honest Clients
+print("Honest Clients")
+run_test(1024, 1024, 32, 100, 100)
