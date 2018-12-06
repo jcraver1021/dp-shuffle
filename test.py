@@ -4,34 +4,105 @@
 import longitudinal
 import numpy as np
 
-def run_test(n, d, k, eps, collect=None, shuffle=False):
-	clients = []
-	server = longitudinal.Server(d)
-	for i in range(n):
-		print("Client %d" % i)
-		dx = longitudinal.generate_dx(d, k)
-		#print(dx)
-		clients.append(longitudinal.Client(dx))
-	for t in range(d):
-		print("t = %d" % t)
-		reports = []
-		for i in range(n):
-			rep = clients[i].update(t, eps)
-			if rep:
-				#print(rep)
-				reports.append(rep)
+class Instance:
+	"""An instance of a N:1 client/server statistics collection, including the statistics kept about the whole thing
+	
+	To use:
+	>>> t = test.Instance(n, d, k, e)
+	>>> t.run(True, True)
+	"""
+	
+	def __init__(self, n, d, k, epsilon):
+		"""Initialize the instance
+		Input:
+			n: Number of clients
+			d: Length of epoch (number of time periods)
+			k: Maximum allowed state changes per client per epoch
+			epsilon: Privacy budget
+		Output:
+			None
+		Side Effects:
+			clients, server objects are populated
+			X (n x d+1 matrix of true value vectors) is computed
+			dX (n x d matrix of differential vectors) is computed
+			x_true (sum of true value at time t-1 across all clients) is computed
+			f_true (sum of delta at time t across all clients) is computed
+			reports is initialized to an empty list
+			f_approx is initialized to a 0-vector of size d
+			All these objects are publicly accessible
+		"""
+		
+		# Store our inputs
+		self.n = n
+		self.d = d
+		self.k = k
+		self.epsilon = epsilon
+		
+		# Set up objects
+		self.clients = []
+		self.server = longitudinal.Server(self.d)
+		X = []
+		dX = []
+		for i in range(self.n):
+			dx = longitudinal.generate_dx(d, k)
+			x = longitudinal.compute_x(dx)
+			dX.append(dx)
+			X.append(x)
+			self.clients.append(longitudinal.Client(dx))
+		self.X = np.array(X)
+		self.dX = np.array(dX)
+		
+		# Fill in statistical objects (some will just be placeholders)
+		self.reports = []
+		self.f_true = np.sum(dX, axis=0)
+		self.x_true = np.sum(X, axis=0)
+		self.f_approx = np.zeros(self.d)
+	
+	def run(self, collect=True, shuffle=False, server_epsilon=None):
+		"""Initialize the instance
+		Input:
+			collect: Whether to have the server collect the reports and run statistics
+			shuffle: Whether to shuffle the reports before submitting to the server
+			server_epsilon: Epsilon value to use in collection (use client version if absent)
+		Output:
+			None
+		Side Effects:
+			reports is populated with all reports per time period (list of lists)
+			f_approx is initialized to a 0-vector of size d
+			All these objects are publicly accessible
+		"""
+		
+		# Collect the reports from each time period
+		self.reports = []
+		for t in range(self.d):
+			# Get the reports from each client for this period
+			self.reports.append([])
+			for i in range(self.n):
+				rep = self.clients[i].update(t, self.epsilon)
+				# Not all clients will report in a given interval (see reporting level h in longitudinal.Client)
+				if rep:
+					self.reports[-1].append(rep)
+			
+			# Submit the reports to the server
+			if collect:
+				self.server.collect(t, self.reports[-1])
+		
+		# Once finished, have the server aggregate the reports and compute statistics
 		if collect:
-			server.collect(t, reports)
-	if collect:
-		f = server.aggregate(k, collect)
-		print(f)
-		f_true = np.sum(np.array([clients[i].dx for i in range(n)]), axis=0)
-		print(f_true)
+			self.f_approx = self.server.aggregate(self.k, server_epsilon if server_epsilon else self.epsilon)
 
-# Test 1: Single-client output
-print("Single-client output")
-run_test(1, 16, 8, 0.25)
+def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None):
+	instance = Instance(n, d, k, eps)
+	instance.run(collect, shuffle, server_epsilon)
+	return instance
 
-# Test 1: Honest Clients
-print("Honest Clients")
-run_test(1024*128, 32, 4, 100, 100)
+def test_single_client():
+	run_test(1, 16, 8, 0.25)
+
+def test_honest_clients():
+	run_test(1024*128, 32, 4, 100, True)
+
+# If called directly, run the test cases
+if __name__ == "__main__":
+   test_single_client()
+   test_honest_clients()
