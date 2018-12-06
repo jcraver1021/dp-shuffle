@@ -72,16 +72,17 @@ class Client:
 		"""
 		self.reset(dx)
 	
-	def reset(self, dx):
+	def reset(self, dx=None):
 		"""Reset the client to have the given bits and call self.setup(d, k) is called, where d is the length of dx and k is the number of nonzero entries of dx
 		Input:
-			dx (array): The longitudinal secret bits as a discrete differential
+			dx (array): The longitudinal secret bits as a discrete differential; if None, the previous value is retained
 		Output:
 			None
 		Side Effects:
 			See "setup"
 		"""
-		self.__dx = dx
+		if not dx is None:
+			self.__dx = dx
 		self.__setup(len(self.__dx), int(np.linalg.norm(self.__dx, 1)))
 	
 	def __setup(self, d, k):

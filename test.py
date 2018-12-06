@@ -84,13 +84,17 @@ class Instance:
 			All these objects are publicly accessible
 		"""
 		
+		# Reset all clients before run (retaining existing secret bits)
+		for client in self.clients:
+			client.reset()
+		
 		# Collect the reports from each time period
 		self.reports = []
 		for t in range(self.d):
 			# Get the reports from each client for this period
 			self.reports.append([])
-			for i in range(self.n):
-				rep = self.clients[i].update(t, self.epsilon)
+			for client in self.clients:
+				rep = client.update(t, self.epsilon)
 				# Not all clients will report in a given interval (see reporting level h in longitudinal.Client)
 				if rep:
 					self.reports[-1].append(rep)
