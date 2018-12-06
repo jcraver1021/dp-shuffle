@@ -117,7 +117,13 @@ def test_honest_clients():
 	instance = run_test(1024*128, 32, 4, 100, True)
 	print_stats(instance, True)
 
+def test_careful_clients():
+	print("Careful Client Collection")
+	instance = run_test(1024*128, 32, 4, 0.25, True)
+	print_stats(instance, True)
+
 # If called directly, run the test cases
 if __name__ == "__main__":
    test_single_client()
    test_honest_clients()
+   test_careful_clients()
