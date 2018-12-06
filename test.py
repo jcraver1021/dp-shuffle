@@ -96,11 +96,25 @@ def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None):
 	instance.run(collect, shuffle, server_epsilon)
 	return instance
 
+def print_stats(instance, print_server=False):
+	print("sum(dX): ", instance.f_true)
+	print("sum(X): ", instance.x_true)
+	if print_server:
+		print("server sum: ", instance.f_approx)
+		diff = np.linalg.norm(instance.f_true - instance.f_approx, 1)
+		print("difference: ", diff)
+		print("max deviation: ", np.max(diff))
+		print("argmax deviation: ", np.argmax(diff))
+
 def test_single_client():
-	run_test(1, 16, 8, 0.25)
+	print("Single Client Output")
+	instance = run_test(1, 16, 8, 0.25)
+	print_stats(instance)
 
 def test_honest_clients():
-	run_test(1024*128, 32, 4, 100, True)
+	print("Honest Client Collection")
+	instance = run_test(1024*128, 32, 4, 100, True)
+	print_stats(instance, True)
 
 # If called directly, run the test cases
 if __name__ == "__main__":
