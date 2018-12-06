@@ -77,7 +77,7 @@ class Instance:
 			shuffle: Whether to shuffle the reports before submitting to the server
 			server_epsilon: Epsilon value to use in collection (use client version if absent)
 		Output:
-			None
+			f_approx (also committed to state) (only if in server mode)
 		Side Effects:
 			reports is populated with all reports per time period (list of lists)
 			f_approx is initialized to a 0-vector of size d
@@ -102,6 +102,7 @@ class Instance:
 		# Once finished, have the server aggregate the reports and compute statistics
 		if collect:
 			self.f_approx = self.server.aggregate(self.k, server_epsilon if server_epsilon else self.epsilon)
+			return self.f_approx
 
 def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None):
 	instance = Instance(n, d, k, eps)
