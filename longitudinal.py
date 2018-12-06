@@ -183,7 +183,7 @@ class Server:
 		"""
 		# f is the estimate, a is the scaling factor
 		f = []
-		a = np.log2(self.d) * (np.exp(eps / 2) + 1) / (np.exp(eps / 2) - 1)
+		a = k * np.log2(self.d) * (np.exp(eps / 2) + 1) / (np.exp(eps / 2) - 1)
 		
 		# Go by time period
 		for t in range(self.d):
@@ -200,7 +200,7 @@ class Server:
 							C.remove(key2)
 							C.add(((h + 2), int((i + 2) / 2)))
 			# Sum up all the remaining nodes into this time period's estimate
-			f.append(a * k * np.sum([self.T[c] for c in C if c in self.T]))
+			f.append(a * np.sum([self.T[c] for c in C if c in self.T]))
 		
 		# Return all estimates
 		return f
