@@ -34,4 +34,4 @@ run_test(1, 16, 8, 0.25)
 
 # Test 1: Honest Clients
 print("Honest Clients")
-run_test(1024, 1024, 32, 100, 100)
+run_test(1024*128, 32, 4, 100, 100)
