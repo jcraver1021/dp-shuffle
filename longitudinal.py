@@ -82,8 +82,8 @@ class Client:
 		Side Effects:
 			See "setup"
 		"""
-		self.dx = dx
-		self.__setup(len(self.dx), int(np.linalg.norm(self.dx, 1)))
+		self.__dx = dx
+		self.__setup(len(self.__dx), int(np.linalg.norm(self.__dx, 1)))
 	
 	def __setup(self, d, k):
 		"""Setup the client's counters after reset
@@ -117,9 +117,9 @@ class Client:
 			c = 0 (if we report the change), meaning that the client will ONLY report the i*th change
 		"""
 		# Increment the counter if we see a change, store in c if it is the i*th change
-		if self.dx[t] != 0:
+		if self.__dx[t] != 0:
 			if self.__i == self.__ic:
-				self.__c = self.dx[t]
+				self.__c = self.__dx[t]
 			self.__i += 1
 		
 		# Report if we reach a tree-level-based milestone
