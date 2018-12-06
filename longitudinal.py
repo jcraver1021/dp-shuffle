@@ -43,7 +43,7 @@ def compute_x(dx):
 		x: true values at time t - 1
 	"""
 	# Find the first nonzero element of dx and report the opposite (since x is a binary array)
-	x = [-dx[np.nonzero(dx)[0][0]]]
+	x = [int((-dx[np.nonzero(dx)[0][0]] + 1) / 2)]
 	
 	# Compute the marginal sums for each element
 	for i in range(len(dx)):
@@ -51,7 +51,6 @@ def compute_x(dx):
 	
 	# Return the result
 	return x
-	
 
 class Client:
 	"""A client, which contains longitudinal binary data and will report at certain time periods a randomized response based on that data
