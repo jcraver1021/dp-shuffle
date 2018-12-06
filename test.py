@@ -97,11 +97,12 @@ def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None):
 	return instance
 
 def print_stats(instance, print_server=False):
+	print("parameters: n=%d, d=%d, k=%d, e=%0.2f" %(instance.n, instance.d, instance.k, instance.epsilon))
 	print("sum(dX): ", instance.f_true)
 	print("sum(X): ", instance.x_true)
 	if print_server:
 		print("server sum: ", instance.f_approx)
-		diff = np.linalg.norm(instance.f_true - instance.f_approx, 1)
+		diff = np.abs(instance.f_true - instance.f_approx)
 		print("difference: ", diff)
 		print("max deviation: ", np.max(diff))
 		print("argmax deviation: ", np.argmax(diff))
