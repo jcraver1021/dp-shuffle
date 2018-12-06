@@ -4,6 +4,18 @@
 import longitudinal
 import numpy as np
 
+def normalize(x):
+	"""Normalize a numpy array (x - min) / (max - min)
+	Input:
+		x: A numpy array
+	Output:
+		The same array normalized to between 0 and 1
+	"""
+	
+	max = np.max(x)
+	min = np.min(x)
+	return (x - min) / (max - min)
+
 class Instance:
 	"""An instance of a N:1 client/server statistics collection, including the statistics kept about the whole thing
 	
