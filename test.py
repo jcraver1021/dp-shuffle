@@ -4,16 +4,16 @@
 import longitudinal
 import numpy as np
 
-def normalize(x):
-	"""Normalize a numpy array (x - min) / (max - min)
+def rescale(x, min, max):
+	"""Rescale a numpy array (x - min) / (max - min)
 	Input:
 		x: A numpy array
+		min: New floor (likely less than or equal to min(x))
+		max: New ceiling (likely greater than or equal to max(x))
 	Output:
-		The same array normalized to between 0 and 1
+		The same array normalized to between min and max
 	"""
 	
-	max = np.max(x)
-	min = np.min(x)
 	return (x - min) / (max - min)
 
 class Instance:
