@@ -89,6 +89,7 @@ class Instance:
 		# Reset all clients before run (retaining existing secret bits)
 		for client in self.clients:
 			client.reset()
+			client.hide_zero(self.hide_zero)
 		
 		# Collect the reports from each time period
 		self.reports = []
