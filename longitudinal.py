@@ -61,15 +61,17 @@ class Client:
 	>>> 	client.update(t, eps)
 	"""
 	
-	def __init__(self, dx):
+	def __init__(self, dx, hide_zero=True):
 		"""Initialize the client (simply calls self.reset())
 		Input:
 			dx (array): The longitudinal secret bits as a discrete differential (where x[t] = value of x at time t, dx[t] = x[t] - x[t-1])
+			hide_zero: Whether to report 1 or -1 (with equal probability) if no value at time t (default True)
 		Output:
 			None
 		Side Effects:
 			See "reset"
 		"""
+		self.__hide_zero = hide_zero
 		self.reset(dx)
 	
 	def reset(self, dx=None):
@@ -84,6 +86,17 @@ class Client:
 		if not dx is None:
 			self.__dx = dx
 		self.__setup(len(self.__dx), int(np.linalg.norm(self.__dx, 1)))
+	
+	def hide_zeros(hide_zero=True):
+		"""Set whether we hide our zeros on reporting
+		Input:
+			hide_zero: True (default) or False
+		Output:
+			None
+		Side Effects:
+			The client setting
+		"""
+		self.__hide_zero = hide_zero
 	
 	def __setup(self, d, k):
 		"""Setup the client's counters after reset
@@ -124,7 +137,7 @@ class Client:
 		
 		# Report if we reach a tree-level-based milestone
 		if (t + 1) % (2 ** self.__hc) == 0:
-			u = np.random.choice([-1, 1]) 
+			u = np.random.choice([-1, 1]) if self.__hide_zero else 0
 			if self.__c != 0:
 				# randomized response
 				b = 2 * np.random.binomial(1, np.exp(eps / 2) / (1 + np.exp(eps / 2))) - 1

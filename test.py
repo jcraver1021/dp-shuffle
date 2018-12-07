@@ -24,13 +24,14 @@ class Instance:
 	>>> t.run(True, True)
 	"""
 	
-	def __init__(self, n, d, k, epsilon):
+	def __init__(self, n, d, k, epsilon, hide_zero=True):
 		"""Initialize the instance
 		Input:
 			n: Number of clients
 			d: Length of epoch (number of time periods)
 			k: Maximum allowed state changes per client per epoch
 			epsilon: Privacy budget
+			hide_zero: Whether clients will hide their zeros (default True)
 		Output:
 			None
 		Side Effects:
@@ -49,6 +50,7 @@ class Instance:
 		self.d = d
 		self.k = k
 		self.epsilon = epsilon
+		self.hide_zero = hide_zero
 		
 		# Set up objects
 		self.clients = []
@@ -60,7 +62,7 @@ class Instance:
 			x = longitudinal.compute_x(dx)
 			dX.append(dx)
 			X.append(x)
-			self.clients.append(longitudinal.Client(dx))
+			self.clients.append(longitudinal.Client(dx, hide_zero))
 		self.X = np.array(X)
 		self.dX = np.array(dX)
 		
@@ -108,13 +110,15 @@ class Instance:
 			self.f_approx = self.server.aggregate(self.k, server_epsilon if server_epsilon else self.epsilon)
 			return self.f_approx
 
-def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None):
-	instance = Instance(n, d, k, eps)
+def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None, hide_zero=True):
+	instance = Instance(n, d, k, eps, hide_zero)
 	instance.run(collect, shuffle, server_epsilon)
 	return instance
 
 def print_stats(instance, print_server=False):
 	print("parameters: n=%d, d=%d, k=%d, e=%0.2f" %(instance.n, instance.d, instance.k, instance.epsilon))
+	if not instance.hide_zero:
+		print("Zeros not hidden")
 	print("sum(dX): ", instance.f_true)
 	print("sum(X): ", instance.x_true)
 	print("net: ", np.sum(instance.f_true))
@@ -131,6 +135,11 @@ def test_single_client():
 	instance = run_test(1, 128, 32, 0.25)
 	print_stats(instance)
 
+def test_naive_clients():
+	print("Naive Client Collection")
+	instance = run_test(1024*512, 32, 4, 100, True, False, None, True)
+	print_stats(instance, True)
+
 def test_honest_clients():
 	print("Honest Client Collection")
 	instance = run_test(1024*512, 32, 4, 100, True)
@@ -144,5 +153,6 @@ def test_careful_clients():
 # If called directly, run the test cases
 if __name__ == "__main__":
    test_single_client()
+   test_naive_clients()
    test_honest_clients()
    test_careful_clients()
