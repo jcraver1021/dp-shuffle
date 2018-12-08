@@ -61,7 +61,7 @@ class Client:
 	>>> 	client.update(t, eps)
 	"""
 	
-	def __init__(self, dx, hide_zero=True):
+	def __init__(self, dx, hide_zero=True, choose_level=True):
 		"""Initialize the client (simply calls self.reset())
 		Input:
 			dx (array): The longitudinal secret bits as a discrete differential (where x[t] = value of x at time t, dx[t] = x[t] - x[t-1])
@@ -72,6 +72,7 @@ class Client:
 			See "reset"
 		"""
 		self.__hide_zero = hide_zero
+		self.__choose_level = choose_level
 		self.reset(dx)
 	
 	def reset(self, dx=None):
@@ -87,7 +88,7 @@ class Client:
 			self.__dx = dx
 		self.__setup(len(self.__dx), int(np.linalg.norm(self.__dx, 1)))
 	
-	def hide_zeros(hide_zero=True):
+	def hide_zero(self, hide_zero=True):
 		"""Set whether we hide our zeros on reporting
 		Input:
 			hide_zero: True (default) or False
@@ -97,6 +98,17 @@ class Client:
 			The client setting
 		"""
 		self.__hide_zero = hide_zero
+	
+	def set_choose_level(self, choose_level=True):
+		"""Set whether we choose a random level on which to report
+		Input:
+			choose_level: True (default) or False
+		Output:
+			None
+		Side Effects:
+			The client setting
+		"""
+		self.__choose_level = choose_level
 	
 	def __setup(self, d, k):
 		"""Setup the client's counters after reset
@@ -111,11 +123,26 @@ class Client:
 			i = 0 (number of changes encountered during update step)
 			c = 0 (i*th change to report, when found)
 		"""
-		self.__ic = np.random.choice(np.arange(k))			# Choose a change to report
-		self.__hc = np.random.choice(tree_depth_list(d))	# Choose a level of the tree to report
-		self.__i = 0										# Counters (changes seen)
-		self.__c = 0										# Value of change seen
-		self.k = k											# Number of times this client changes its value
+		self.__ic = np.random.choice(np.arange(k))	# Choose a change to report
+		self.__get_level(d)							# Choose a level of the tree to report
+		self.__i = 0								# Counters (changes seen)
+		self.__c = 0								# Value of change seen
+		self.k = k									# Number of times this client changes its value
+	
+	def __get_level(self, d):
+		"""Choose the level on which to report (based on settings)
+		Input:
+			d: Length of epoch
+		Output:
+			None
+		Side Effects:
+			h*: choose a random level, or 1 if we're set to do that
+		"""
+		# This setting is not in the paper, but we add it to demonstrate the purpose of coarse reporting
+		if self.__choose_level:
+			self.__hc = np.random.choice(tree_depth_list(d))
+		else:
+			self.__hc = 0
 	
 	def update(self, t, eps):
 		"""Report on the update for time t (depending on which level of tree we are on, expect an update every d / 2^h* times)
@@ -137,7 +164,7 @@ class Client:
 		
 		# Report if we reach a tree-level-based milestone
 		if (t + 1) % (2 ** self.__hc) == 0:
-			u = np.random.choice([-1, 1]) if self.__hide_zero else 0
+			u = np.random.choice([-1, 1]) if self.__hide_zero else 0 # This setting (not in the paper) allows the client to be honest
 			if self.__c != 0:
 				# randomized response
 				b = 2 * np.random.binomial(1, np.exp(eps / 2) / (1 + np.exp(eps / 2))) - 1

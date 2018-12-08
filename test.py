@@ -24,7 +24,7 @@ class Instance:
 	>>> t.run(True, True)
 	"""
 	
-	def __init__(self, n, d, k, epsilon, hide_zero=True):
+	def __init__(self, n, d, k, epsilon, hide_zero=True, choose_level=True):
 		"""Initialize the instance
 		Input:
 			n: Number of clients
@@ -32,6 +32,7 @@ class Instance:
 			k: Maximum allowed state changes per client per epoch
 			epsilon: Privacy budget
 			hide_zero: Whether clients will hide their zeros (default True)
+			choose_level: Whether clients will choose a reporting level at random (default True)
 		Output:
 			None
 		Side Effects:
@@ -51,6 +52,7 @@ class Instance:
 		self.k = k
 		self.epsilon = epsilon
 		self.hide_zero = hide_zero
+		self.choose_level = choose_level
 		
 		# Set up objects
 		self.clients = []
@@ -90,6 +92,7 @@ class Instance:
 		for client in self.clients:
 			client.reset()
 			client.hide_zero(self.hide_zero)
+			client.set_choose_level(self.choose_level)
 		
 		# Collect the reports from each time period
 		self.reports = []
