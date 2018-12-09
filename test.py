@@ -65,7 +65,7 @@ class Instance:
 			x = longitudinal.compute_x(dx)
 			dX.append(dx)
 			X.append(x)
-			self.clients.append(longitudinal.Client(dx, hide_zero))
+			self.clients.append(longitudinal.Client(dx, hide_zero, choose_level))
 		self.X = np.array(X)
 		self.dX = np.array(dX)
 		
@@ -91,9 +91,9 @@ class Instance:
 		
 		# Reset all clients before run (retaining existing secret bits)
 		for client in self.clients:
-			client.reset()
 			client.hide_zero(self.hide_zero)
 			client.set_choose_level(self.choose_level)
+			client.reset()
 		
 		# Collect the reports from each time period
 		self.reports = []
