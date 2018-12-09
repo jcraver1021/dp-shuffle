@@ -171,7 +171,7 @@ class Client:
 				u = b * self.__c
 				self.__c = 0 # do not report any more true changes
 			return (self.__hc, t, u)
-	
+
 class Server:
 	"""A client, which contains longitudinal binary data and will report at certain time periods a randomized response based on that data
 	
@@ -208,7 +208,7 @@ class Server:
 		# Each report is (h, t, u), where h is the level, t is the time, and u is the value
 		if reports:
 			for report in reports:
-				if report:
+				if report: # Not all clients will report in a given interval (see reporting level h in longitudinal.Client)
 					key = (report[0] + 1, int((report[1] + 1) / (2 ** report[0])))
 					if key not in self.T:
 						self.T[key] = 0

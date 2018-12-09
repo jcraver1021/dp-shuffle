@@ -3,6 +3,7 @@
 
 import longitudinal
 import numpy as np
+import csv
 
 def rescale(x, min, max):
 	"""Rescale a numpy array (x - min) / (max - min)
@@ -74,7 +75,7 @@ class Instance:
 		self.x_true = np.sum(X, axis=0)
 		self.f_approx = np.zeros(self.d)
 	
-	def run(self, collect=True, shuffle=False, server_epsilon=None):
+	def run(self, collect=True, shuffle=False, log=None, server_epsilon=None):
 		"""Initialize the instance
 		Input:
 			collect: Whether to have the server collect the reports and run statistics
@@ -96,14 +97,16 @@ class Instance:
 		
 		# Collect the reports from each time period
 		self.reports = []
+		indices = np.arange(self.n)
 		for t in range(self.d):
 			# Get the reports from each client for this period
 			self.reports.append([])
-			for client in self.clients:
-				rep = client.update(t, self.epsilon)
-				# Not all clients will report in a given interval (see reporting level h in longitudinal.Client)
-				if rep:
-					self.reports[-1].append(rep)
+			# Shuffle the client order before querying (simulating algorithms 3 and 4 from the paper)
+			if shuffle:
+				np.random.shuffle(indices)
+			for i in indices:
+				rep = self.clients[i].update(t, self.epsilon)
+				self.reports[-1].append(rep)
 			
 			# Submit the reports to the server
 			if collect:
