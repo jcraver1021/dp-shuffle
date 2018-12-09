@@ -116,6 +116,18 @@ class Instance:
 		if collect:
 			self.f_approx = self.server.aggregate(self.k, server_epsilon if server_epsilon else self.epsilon)
 			return self.f_approx
+	
+	def write_reports(self, filename):
+		"""Write the latest client reports to a file in whatever order they were received (since you don't know that the server won't do that IRL)
+		Input:
+			filename: Filename of the output
+		Output:
+			None
+		"""
+		with open(filename, 'w', newline='') as csvfile:
+			repwriter = csv.writer(csvfile)
+			for row in self.reports:
+				repwriter.writerow(["%d/%d/%d" %(entry[0], entry[1], entry[2]) for entry in row])
 
 def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None, hide_zero=True):
 	instance = Instance(n, d, k, eps, hide_zero)
