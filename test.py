@@ -126,8 +126,16 @@ class Instance:
 		"""
 		with open(filename, 'w', newline='') as csvfile:
 			repwriter = csv.writer(csvfile)
-			for row in self.reports:
-				repwriter.writerow(["%d/%d/%d" %(entry[0], entry[1], entry[2]) for entry in row])
+			repwriter.writerow(["t = %d" % i for i in range(self.d)])
+			for i in range(self.n):
+				row = []
+				for t in range(self.d):
+					r = self.reports[t][i]
+					if r:
+						row.append(str(r[2]))
+					else:
+						row.append('')
+				repwriter.writerow(row)
 
 def run_test(n, d, k, eps, collect=True, shuffle=False, server_epsilon=None, hide_zero=True):
 	instance = Instance(n, d, k, eps, hide_zero)
