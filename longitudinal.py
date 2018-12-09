@@ -123,11 +123,11 @@ class Client:
 			i = 0 (number of changes encountered during update step)
 			c = 0 (i*th change to report, when found)
 		"""
-		self.__ic = np.random.choice(np.arange(k))	# Choose a change to report
-		self.__get_level(d)							# Choose a level of the tree to report
-		self.__i = 0								# Counters (changes seen)
-		self.__c = 0								# Value of change seen
-		self.k = k									# Number of times this client changes its value
+		self.__ic = np.random.choice(np.arange(k)) if k > 0 else 0	# Choose a change to report
+		self.__get_level(d)											# Choose a level of the tree to report
+		self.__i = 0												# Counters (changes seen)
+		self.__c = 0												# Value of change seen
+		self.k = k													# Number of times this client changes its value
 	
 	def __get_level(self, d):
 		"""Choose the level on which to report (based on settings)
