@@ -71,11 +71,11 @@ class Instance:
 		
 		# Fill in statistical objects (some will just be placeholders)
 		self.reports = []
-		self.f_true = np.sum(dX, axis=0)
+		self.f_true = np.array([np.sum(self.dX[:, :(i+1)]) for i in range(d)])
 		self.x_true = np.sum(X, axis=0)
 		self.f_approx = np.zeros(self.d)
 	
-	def run(self, collect=True, shuffle=False, log=None, server_epsilon=None):
+	def run(self, collect=True, shuffle=False, server_epsilon=None):
 		"""Initialize the instance
 		Input:
 			collect: Whether to have the server collect the reports and run statistics
