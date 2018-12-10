@@ -236,10 +236,11 @@ class Server:
 					if i % 2 == 0:
 						key1 = (h + 1, i + 1)
 						key2 = (h + 1, i + 2)
-						if key1 in C and key2 in C:
+						key3 = (h + 2, int((i + 2) / 2))
+						if key1 in C and key2 in C and key3 in self.T:
 							C.remove(key1)
 							C.remove(key2)
-							C.add(((h + 2), int((i + 2) / 2)))
+							C.add(key3)
 			# Sum up all the remaining nodes into this time period's estimate
 			f.append(a * np.sum([self.T[c] for c in C if c in self.T]))
 		
